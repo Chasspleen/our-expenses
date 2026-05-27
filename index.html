@@ -296,17 +296,15 @@ function today() {
 // ── API ──
 
 async function api(action, extra = {}) {
-  const body = { secret: SECRET, action, ...extra };
-  // Apps Script requires form-encoded POST or GET with URL params — not JSON POST
+  // Apps Script CORS only works reliably with GET + URL params
   const url = new URL(API_URL);
   url.searchParams.set('secret', SECRET);
   url.searchParams.set('action', action);
-
-  const res = await fetch(url.toString(), {
-    method: 'POST',
-    body: JSON.stringify(body),
-    redirect: 'follow',
-  });
+  // Encode any extra payload as a single 'payload' param
+  if (Object.keys(extra).length) {
+    url.searchParams.set('payload', JSON.stringify(extra));
+  }
+  const res = await fetch(url.toString(), { redirect: 'follow' });
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || 'Unknown error');
   return data;
