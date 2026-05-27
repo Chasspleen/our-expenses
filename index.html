@@ -297,10 +297,14 @@ function today() {
 
 async function api(action, extra = {}) {
   const body = { secret: SECRET, action, ...extra };
-  const res = await fetch(API_URL, {
+  // Apps Script requires form-encoded POST or GET with URL params — not JSON POST
+  const url = new URL(API_URL);
+  url.searchParams.set('secret', SECRET);
+  url.searchParams.set('action', action);
+
+  const res = await fetch(url.toString(), {
     method: 'POST',
     body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' },
     redirect: 'follow',
   });
   const data = await res.json();
