@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Expenses</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --text: #f0ece4;
+    --muted: #6b6560;
+    --accent-h: #e8c97a;
+    --accent-m: #7ab8e8;
+    --green: #7ae8a8;
+    --red: #e87a7a;
+    --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; min-height: 100vh; }
+
+  /* LOADER */
+  #loader {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; flex-direction: column; gap: 12px;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent-h);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loader-msg { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
+
+  /* HEADER */
+  header { padding: 28px 32px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .header-title { font-family: 'DM Serif Display', serif; font-size: 26px; letter-spacing: -0.5px; color: var(--text); }
+  .header-title em { font-style: italic; color: var(--accent-h); }
+  .header-sub { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* BALANCE BAR */
+  .balance-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 20px 32px; border-bottom: 1px solid var(--border); gap: 16px; }
+  .balance-person { display: flex; flex-direction: column; gap: 4px; }
+  .balance-person.right { text-align: right; align-items: flex-end; }
+  .balance-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .balance-amount { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -1px; }
+  .balance-amount.positive { color: var(--green); }
+  .balance-amount.negative { color: var(--red); }
+  .balance-amount.neutral { color: var(--muted); }
+  .balance-center { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .settlement-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; padding: 6px 14px; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.4; white-space: nowrap; }
+  .settlement-pill strong { color: var(--text); font-weight: 500; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; padding: 0 32px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 14px 20px; cursor: pointer; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent-h); }
+
+  /* MAIN LAYOUT */
+  .main { display: grid; grid-template-columns: 1fr 360px; min-height: calc(100vh - 200px); }
+  .panel { padding: 24px 32px; }
+  .panel-right { border-left: 1px solid var(--border); padding: 24px; background: var(--surface); }
+
+  /* SECTION TITLES */
+  .section-title { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+  /* EXPENSE LIST */
+  .expense-list { display: flex; flex-direction: column; gap: 1px; }
+  .expense-item { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 14px; padding: 12px 14px; background: var(--surface); border-radius: var(--radius); cursor: default; transition: background 0.12s; border: 1px solid transparent; }
+  .expense-item:hover { background: var(--surface2); border-color: var(--border); }
+  .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .expense-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .expense-name { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .expense-meta { font-size: 11px; color: var(--muted); display: flex; gap: 8px; }
+  .payer-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; flex-shrink: 0; align-self: center; }
+  .payer-h { background: rgba(232,201,122,0.15); color: var(--accent-h); }
+  .payer-m { background: rgba(122,184,232,0.15); color: var(--accent-m); }
+  .expense-amount { font-family: 'DM Serif Display', serif; font-size: 16px; letter-spacing: -0.5px; text-align: right; flex-shrink: 0; }
+
+  /* FORM */
+  .form-section { display: flex; flex-direction: column; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .form-input, .form-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.15s; width: 100%; }
+  .form-input:focus, .form-select:focus { border-color: var(--accent-h); }
+  .form-select option { background: var(--surface2); }
+  .payer-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .payer-btn { padding: 9px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .payer-btn.active-h { background: rgba(232,201,122,0.12); border-color: var(--accent-h); color: var(--accent-h); }
+  .payer-btn.active-m { background: rgba(122,184,232,0.12); border-color: var(--accent-m); color: var(--accent-m); }
+  .add-btn { margin-top: 4px; padding: 11px; background: var(--accent-h); color: #0e0e0e; border: none; border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; width: 100%; }
+  .add-btn:hover { opacity: 0.88; }
+  .add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* CHART */
+  .chart-area { margin-top: 32px; }
+  .chart-bars { display: flex; flex-direction: column; gap: 8px; }
+  .chart-row { display: flex; flex-direction: column; gap: 4px; }
+  .chart-row-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .chart-row-label span:last-child { color: var(--text); }
+  .bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+
+  /* SUMMARY */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .stat-card-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .stat-card-value { font-family: 'DM Serif Display', serif; font-size: 22px; letter-spacing: -0.5px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.8; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 99px; font-size: 12px; transition: transform 0.25s ease; z-index: 200; white-space: nowrap; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    header { padding: 20px 16px 16px; flex-direction: column; gap: 4px; }
+    .balance-bar { padding: 16px; gap: 8px; }
+    .balance-amount { font-size: 20px; }
+    .settlement-pill { font-size: 10px; padding: 5px 10px; }
+    .tabs { padding: 0 16px; overflow-x: auto; }
+    .tab { padding: 12px 14px; white-space: nowrap; }
+    .main { grid-template-columns: 1fr; }
+    .panel { padding: 16px; }
+    .panel-right { border-left: none; border-top: 1px solid var(--border); padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="spinner"></div>
+  <div id="loader-msg">Loading...</div>
+</div>
+
+<div id="toast"></div>
+
+<header>
+  <div class="header-title"><em>Our</em> Expenses</div>
+  <div class="header-sub">Hugo &amp; Michelle</div>
+</header>
+
+<div class="balance-bar">
+  <div class="balance-person">
+    <div class="balance-label">Hugo paid</div>
+    <div class="balance-amount neutral" id="hugo-total">IDR 0</div>
+  </div>
+  <div class="balance-center">
+    <div class="settlement-pill" id="settlement-text">Loading...</div>
+  </div>
+  <div class="balance-person right">
+    <div class="balance-label">Michelle paid</div>
+    <div class="balance-amount neutral" id="michelle-total">IDR 0</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('expenses', this)">Expenses</button>
+  <button class="tab" onclick="switchTab('payments', this)">Payments</button>
+  <button class="tab" onclick="switchTab('summary', this)">Summary</button>
+</div>
+
+<div class="main">
+  <div class="panel" id="tab-expenses">
+    <div class="section-title">All entries</div>
+    <div class="expense-list" id="expense-list">
+      <div class="empty">Loading...</div>
+    </div>
+  </div>
+
+  <div class="panel" id="tab-payments" style="display:none;">
+    <div class="section-title">Settlement history</div>
+    <div class="expense-list" id="payment-list">
+      <div class="empty">Loading...</div>
+    </div>
+  </div>
+
+  <div class="panel" id="tab-summary" style="display:none;">
+    <div class="section-title">Overview</div>
+    <div class="summary-grid" id="summary-grid"></div>
+    <hr class="divider">
+    <div class="section-title">By category</div>
+    <div class="chart-area"><div class="chart-bars" id="chart-bars"></div></div>
+  </div>
+
+  <div class="panel-right">
+    <!-- EXPENSE FORM -->
+    <div id="form-expense">
+      <div class="section-title">Add expense</div>
+      <div class="form-section">
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input class="form-input" id="inp-desc" type="text" placeholder="e.g. Groceries at Pepito">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (IDR)</label>
+          <input class="form-input" id="inp-amount" type="number" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="inp-cat">
+            <option value="food">Food &amp; Groceries</option>
+            <option value="dining">Dining Out</option>
+            <option value="transport">Transport</option>
+            <option value="accommodation">Accommodation</option>
+            <option value="health">Health</option>
+            <option value="utilities">Utilities</option>
+            <option value="shopping">Shopping</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Paid by</label>
+          <div class="payer-toggle">
+            <button class="payer-btn active-h" id="btn-hugo" onclick="setPayer('Hugo')">Hugo</button>
+            <button class="payer-btn" id="btn-michelle" onclick="setPayer('Michelle')">Michelle</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="inp-date" type="date">
+        </div>
+        <button class="add-btn" id="btn-add-expense" onclick="addExpense()">+ Add Expense</button>
+      </div>
+    </div>
+
+    <!-- PAYMENT FORM -->
+    <div id="form-payment" style="display:none;">
+      <div class="section-title">Log payment</div>
+      <div class="form-section">
+        <div class="form-group">
+          <label class="form-label">Paid by</label>
+          <div class="payer-toggle">
+            <button class="payer-btn active-h" id="pbtn-hugo" onclick="setPaymentPayer('Hugo')">Hugo</button>
+            <button class="payer-btn" id="pbtn-michelle" onclick="setPaymentPayer('Michelle')">Michelle</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (IDR)</label>
+          <input class="form-input" id="pay-amount" type="number" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Note (optional)</label>
+          <input class="form-input" id="pay-note" type="text" placeholder="e.g. Bank transfer">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="pay-date" type="date">
+        </div>
+        <button class="add-btn" id="btn-add-payment" style="background:var(--green);color:#0e0e0e" onclick="addPayment()">+ Log Payment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ── replace both values after setup
+const API_URL = 'Doudou-Baba';
+const SECRET  = 'Doudou-Baba';
+
+const CATS = {
+  food:          { label: 'Food & Groceries',  color: '#e8c97a' },
+  dining:        { label: 'Dining Out',         color: '#e87a9e' },
+  transport:     { label: 'Transport',          color: '#7ab8e8' },
+  accommodation: { label: 'Accommodation',      color: '#b87ae8' },
+  health:        { label: 'Health',             color: '#7ae8a8' },
+  utilities:     { label: 'Utilities',          color: '#e8a87a' },
+  shopping:      { label: 'Shopping',           color: '#e8e87a' },
+  entertainment: { label: 'Entertainment',      color: '#7ae8e8' },
+  other:         { label: 'Other',              color: '#888' },
+};
+
+let expenses = [];
+let payments = [];
+let selectedPayer = 'Hugo';
+let selectedPaymentPayer = 'Hugo';
+
+document.getElementById('inp-date').value = today();
+document.getElementById('pay-date').value = today();
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// ── API ──
+
+async function api(action, extra = {}) {
+  const body = { secret: SECRET, action, ...extra };
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    redirect: 'follow',
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Unknown error');
+  return data;
+}
+
+async function loadAll() {
+  setLoader(true, 'Loading...');
+  try {
+    const data = await api('getAll');
+    expenses = (data.expenses || []).map(e => ({
+      ...e,
+      amount: Number(e.amount),
+      id: String(e.id),
+    }));
+    payments = (data.payments || []).map(p => ({
+      ...p,
+      amount: Number(p.amount),
+      id: String(p.id),
+    }));
+    render();
+  } catch (err) {
+    showToast('Could not load data: ' + err.message, true);
+  } finally {
+    setLoader(false);
+  }
+}
+
+function setLoader(show, msg = '') {
+  document.getElementById('loader').style.display = show ? 'flex' : 'none';
+  document.getElementById('loader-msg').textContent = msg;
+}
+
+// ── TOAST ──
+
+let toastTimer;
+function showToast(msg, error = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (error ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+// ── PAYER TOGGLES ──
+
+function setPayer(p) {
+  selectedPayer = p;
+  document.getElementById('btn-hugo').className = 'payer-btn' + (p === 'Hugo' ? ' active-h' : '');
+  document.getElementById('btn-michelle').className = 'payer-btn' + (p === 'Michelle' ? ' active-m' : '');
+}
+
+function setPaymentPayer(p) {
+  selectedPaymentPayer = p;
+  document.getElementById('pbtn-hugo').className = 'payer-btn' + (p === 'Hugo' ? ' active-h' : '');
+  document.getElementById('pbtn-michelle').className = 'payer-btn' + (p === 'Michelle' ? ' active-m' : '');
+}
+
+// ── ADD EXPENSE ──
+
+async function addExpense() {
+  const desc   = document.getElementById('inp-desc').value.trim();
+  const amount = parseFloat(document.getElementById('inp-amount').value);
+  const cat    = document.getElementById('inp-cat').value;
+  const date   = document.getElementById('inp-date').value;
+
+  if (!desc)              { showToast('Enter a description', true); return; }
+  if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
+  if (!date)              { showToast('Select a date', true); return; }
+
+  const entry = { id: String(Date.now()), desc, amount, cat, payer: selectedPayer, date };
+
+  setBusy('btn-add-expense', true);
+  try {
+    await api('addExpense', { data: entry });
+    expenses.unshift(entry);
+    render();
+    document.getElementById('inp-desc').value = '';
+    document.getElementById('inp-amount').value = '';
+    document.getElementById('inp-date').value = today();
+    showToast('Expense added');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  } finally {
+    setBusy('btn-add-expense', false);
+  }
+}
+
+// ── ADD PAYMENT ──
+
+async function addPayment() {
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  const note   = document.getElementById('pay-note').value.trim() || 'Settlement payment';
+  const date   = document.getElementById('pay-date').value;
+
+  if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
+  if (!date)                  { showToast('Select a date', true); return; }
+
+  const entry = { id: String(Date.now()), amount, note, payer: selectedPaymentPayer, date };
+
+  setBusy('btn-add-payment', true);
+  try {
+    await api('addPayment', { data: entry });
+    payments.unshift(entry);
+    render();
+    document.getElementById('pay-amount').value = '';
+    document.getElementById('pay-note').value = '';
+    document.getElementById('pay-date').value = today();
+    showToast('Payment logged');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  } finally {
+    setBusy('btn-add-payment', false);
+  }
+}
+
+// ── DELETE ──
+
+async function deleteExpense(id) {
+  if (!confirm('Remove this expense?')) return;
+  try {
+    await api('deleteExpense', { id });
+    expenses = expenses.filter(e => String(e.id) !== String(id));
+    render();
+    showToast('Removed');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  }
+}
+
+async function deletePayment(id) {
+  if (!confirm('Remove this payment?')) return;
+  try {
+    await api('deletePayment', { id });
+    payments = payments.filter(p => String(p.id) !== String(id));
+    render();
+    showToast('Removed');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  }
+}
+
+function setBusy(btnId, busy) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = busy;
+  if (busy) btn.dataset.orig = btn.textContent;
+  btn.textContent = busy ? 'Saving...' : btn.dataset.orig;
+}
+
+// ── RENDER ──
+
+function render() {
+  renderList();
+  renderPaymentList();
+  renderBalance();
+  renderSummary();
+}
+
+function fmt(n) {
+  n = Math.abs(n);
+  if (n >= 1_000_000) return 'IDR ' + (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000)     return 'IDR ' + Math.round(n / 1000) + 'K';
+  return 'IDR ' + n.toLocaleString();
+}
+
+function fmtFull(n) {
+  return 'IDR ' + Math.round(Math.abs(n)).toLocaleString('en-US');
+}
+
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function renderList() {
+  const el = document.getElementById('expense-list');
+  if (!expenses.length) {
+    el.innerHTML = '<div class="empty">No expenses yet.<br>Add your first one on the right.</div>';
+    return;
+  }
+  el.innerHTML = expenses.map(e => {
+    const cat = CATS[e.cat] || CATS.other;
+    const payerClass = e.payer === 'Hugo' ? 'payer-h' : 'payer-m';
+    return `
+      <div class="expense-item">
+        <span class="cat-dot" style="background:${cat.color}"></span>
+        <div class="expense-info">
+          <div class="expense-name">${e.desc}</div>
+          <div class="expense-meta"><span>${cat.label}</span><span>${fmtDate(e.date)}</span></div>
+        </div>
+        <span class="payer-tag ${payerClass}">${e.payer}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="expense-amount">${fmt(e.amount)}</span>
+          <span onclick="deleteExpense('${e.id}')" style="color:var(--muted);cursor:pointer;font-size:16px;line-height:1" title="Remove">×</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderPaymentList() {
+  const el = document.getElementById('payment-list');
+  if (!payments.length) {
+    el.innerHTML = '<div class="empty">No payments yet.<br>Log one on the right.</div>';
+    return;
+  }
+  el.innerHTML = payments.map(p => {
+    const payerClass = p.payer === 'Hugo' ? 'payer-h' : 'payer-m';
+    const recipient = p.payer === 'Hugo' ? 'Michelle' : 'Hugo';
+    return `
+      <div class="expense-item">
+        <span class="cat-dot" style="background:var(--green)"></span>
+        <div class="expense-info">
+          <div class="expense-name">${p.note}</div>
+          <div class="expense-meta"><span>${p.payer} → ${recipient}</span><span>${fmtDate(p.date)}</span></div>
+        </div>
+        <span class="payer-tag ${payerClass}">${p.payer}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="expense-amount" style="color:var(--green)">${fmt(p.amount)}</span>
+          <span onclick="deletePayment('${p.id}')" style="color:var(--muted);cursor:pointer;font-size:16px;line-height:1" title="Remove">×</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderBalance() {
+  const hugoExp      = expenses.filter(e => e.payer === 'Hugo').reduce((s, e) => s + e.amount, 0);
+  const michelleExp  = expenses.filter(e => e.payer === 'Michelle').reduce((s, e) => s + e.amount, 0);
+  const total        = hugoExp + michelleExp;
+  const rawOwed      = hugoExp - total / 2; // positive = michelle owes hugo
+  const hugoPaid     = payments.filter(p => p.payer === 'Hugo').reduce((s, p) => s + p.amount, 0);
+  const michellePaid = payments.filter(p => p.payer === 'Michelle').reduce((s, p) => s + p.amount, 0);
+  const netOwed      = rawOwed - michellePaid + hugoPaid;
+
+  document.getElementById('hugo-total').textContent    = fmtFull(hugoExp);
+  document.getElementById('michelle-total').textContent = fmtFull(michelleExp);
+
+  const pill = document.getElementById('settlement-text');
+  const htEl = document.getElementById('hugo-total');
+  const mtEl = document.getElementById('michelle-total');
+  htEl.className = 'balance-amount';
+  mtEl.className = 'balance-amount';
+
+  if (Math.abs(netOwed) < 1000) {
+    pill.innerHTML = 'All settled up';
+    htEl.classList.add('neutral'); mtEl.classList.add('neutral');
+  } else if (netOwed > 0) {
+    pill.innerHTML = `<strong>Michelle</strong> owes Hugo<br>${fmtFull(netOwed)}`;
+    htEl.classList.add('positive'); mtEl.classList.add('negative');
+  } else {
+    pill.innerHTML = `<strong>Hugo</strong> owes Michelle<br>${fmtFull(netOwed)}`;
+    htEl.classList.add('negative'); mtEl.classList.add('positive');
+  }
+}
+
+function renderSummary() {
+  const total        = expenses.reduce((s, e) => s + e.amount, 0);
+  const hugoTotal    = expenses.filter(e => e.payer === 'Hugo').reduce((s, e) => s + e.amount, 0);
+  const micTotal     = expenses.filter(e => e.payer === 'Michelle').reduce((s, e) => s + e.amount, 0);
+  const totalPay     = payments.reduce((s, p) => s + p.amount, 0);
+
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-card-label">Total spend</div><div class="stat-card-value">${fmt(total)}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Payments made</div><div class="stat-card-value" style="color:var(--green)">${fmt(totalPay)}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Hugo paid</div><div class="stat-card-value" style="color:var(--accent-h)">${fmt(hugoTotal)}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Michelle paid</div><div class="stat-card-value" style="color:var(--accent-m)">${fmt(micTotal)}</div></div>
+  `;
+
+  const byCat = {};
+  expenses.forEach(e => { byCat[e.cat] = (byCat[e.cat] || 0) + e.amount; });
+  const sorted = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const max = sorted[0]?.[1] || 1;
+
+  document.getElementById('chart-bars').innerHTML = sorted.length === 0
+    ? '<div style="color:var(--muted);font-size:12px;padding:16px 0">No data yet.</div>'
+    : sorted.map(([cat, amt]) => {
+        const c = CATS[cat] || CATS.other;
+        return `
+          <div class="chart-row">
+            <div class="chart-row-label"><span>${c.label}</span><span>${fmt(amt)}</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(amt/max)*100}%;background:${c.color}"></div></div>
+          </div>`;
+      }).join('');
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-expenses').style.display  = tab === 'expenses'  ? '' : 'none';
+  document.getElementById('tab-payments').style.display  = tab === 'payments'  ? '' : 'none';
+  document.getElementById('tab-summary').style.display   = tab === 'summary'   ? '' : 'none';
+  document.getElementById('form-expense').style.display  = tab === 'payments'  ? 'none' : '';
+  document.getElementById('form-payment').style.display  = tab === 'payments'  ? '' : 'none';
+}
+
+loadAll();
+</script>
+</body>
+</html>
