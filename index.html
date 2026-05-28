@@ -73,7 +73,7 @@
 
   /* EXPENSE LIST */
   .expense-list { display: flex; flex-direction: column; gap: 1px; }
-  .expense-item { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 14px; padding: 12px 14px; background: var(--surface); border-radius: var(--radius); cursor: default; transition: background 0.12s; border: 1px solid transparent; }
+  .expense-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 12px 14px; background: var(--surface); border-radius: var(--radius); cursor: default; transition: background 0.12s; border: 1px solid transparent; }
   .expense-item:hover { background: var(--surface2); border-color: var(--border); }
   .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .expense-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -535,8 +535,8 @@ function renderList() {
           <div class="expense-name">${e.desc}</div>
           <div class="expense-meta"><span>${cat.label}</span><span>${fmtDate(e.date)}</span></div>
         </div>
-        <span class="payer-tag ${payerClass}">${e.payer}</span>
-        <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:nowrap">
+          <span class="payer-tag ${payerClass}">${e.payer}</span>
           ${splitBadge}
           <span class="expense-amount">${fmt(e.amount)}</span>
           <span onclick="deleteExpense('${e.id}')" style="color:var(--muted);cursor:pointer;font-size:16px;line-height:1" title="Remove">×</span>
