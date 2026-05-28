@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Our Expenses</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #040a05;
@@ -20,7 +20,7 @@
     --radius: 10px;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; font-size: 13px; min-height: 100vh; }
 
   /* LOADER */
   #loader {
@@ -40,7 +40,7 @@
 
   /* HEADER */
   header { padding: 28px 32px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
-  .header-title { font-family: 'DM Serif Display', serif; font-size: 26px; letter-spacing: -0.5px; color: var(--text); }
+  .header-title { font-family: 'Montserrat', sans-serif; font-size: 26px; letter-spacing: -0.5px; color: var(--text); }
   .header-title em { font-style: italic; color: var(--accent-h); }
   .header-sub { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
 
@@ -49,7 +49,7 @@
   .balance-person { display: flex; flex-direction: column; gap: 4px; }
   .balance-person.right { text-align: right; align-items: flex-end; }
   .balance-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-  .balance-amount { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -1px; }
+  .balance-amount { font-family: 'Montserrat', sans-serif; font-size: 28px; letter-spacing: -1px; }
   .balance-amount.positive { color: var(--green); }
   .balance-amount.negative { color: var(--red); }
   .balance-amount.neutral { color: var(--muted); }
@@ -82,20 +82,20 @@
   .payer-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; flex-shrink: 0; align-self: center; }
   .payer-h { background: rgba(232,201,122,0.15); color: var(--accent-h); }
   .payer-m { background: rgba(122,184,232,0.15); color: var(--accent-m); }
-  .expense-amount { font-family: 'DM Serif Display', serif; font-size: 16px; letter-spacing: -0.5px; text-align: right; flex-shrink: 0; }
+  .expense-amount { font-family: 'Montserrat', sans-serif; font-size: 16px; letter-spacing: -0.5px; text-align: right; flex-shrink: 0; }
 
   /* FORM */
   .form-section { display: flex; flex-direction: column; gap: 12px; }
   .form-group { display: flex; flex-direction: column; gap: 5px; }
   .form-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-  .form-input, .form-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.15s; width: 100%; }
+  .form-input, .form-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; color: var(--text); font-family: 'Montserrat', sans-serif; font-size: 13px; outline: none; transition: border-color 0.15s; width: 100%; }
   .form-input:focus, .form-select:focus { border-color: var(--accent-h); }
   .form-select option { background: var(--surface2); }
   .payer-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .payer-btn { padding: 9px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .payer-btn { padding: 9px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: 'Montserrat', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; text-align: center; }
   .payer-btn.active-h { background: rgba(232,201,122,0.12); border-color: var(--accent-h); color: var(--accent-h); }
   .payer-btn.active-m { background: rgba(122,184,232,0.12); border-color: var(--accent-m); color: var(--accent-m); }
-  .add-btn { margin-top: 4px; padding: 11px; background: var(--accent-h); color: #0e0e0e; border: none; border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; width: 100%; }
+  .add-btn { margin-top: 4px; padding: 11px; background: var(--accent-h); color: #0e0e0e; border: none; border-radius: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; width: 100%; }
   .add-btn:hover { opacity: 0.88; }
   .add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -112,7 +112,7 @@
   .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
   .stat-card-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-  .stat-card-value { font-family: 'DM Serif Display', serif; font-size: 22px; letter-spacing: -0.5px; }
+  .stat-card-value { font-family: 'Montserrat', sans-serif; font-size: 22px; letter-spacing: -0.5px; }
 
   .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   .empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.8; }
@@ -147,20 +147,20 @@
 
 <header>
   <div class="header-title"><em>Our</em> Expenses</div>
-  <div class="header-sub">Hugo &amp; Michelle</div>
+  <div class="header-sub">Michelle &amp; Hugo</div>
 </header>
 
 <div class="balance-bar">
   <div class="balance-person">
-    <div class="balance-label">Hugo paid</div>
-    <div class="balance-amount neutral" id="hugo-total">IDR 0</div>
+    <div class="balance-label">Michelle paid</div>
+    <div class="balance-amount neutral" id="michelle-total">IDR 0</div>
   </div>
   <div class="balance-center">
     <div class="settlement-pill" id="settlement-text">Loading...</div>
   </div>
   <div class="balance-person right">
-    <div class="balance-label">Michelle paid</div>
-    <div class="balance-amount neutral" id="michelle-total">IDR 0</div>
+    <div class="balance-label">Hugo paid</div>
+    <div class="balance-amount neutral" id="hugo-total">IDR 0</div>
   </div>
 </div>
 
@@ -223,21 +223,21 @@
         <div class="form-group">
           <label class="form-label">Paid by</label>
           <div class="payer-toggle">
-            <button class="payer-btn active-h" id="btn-hugo" onclick="setPayer('Hugo')">Hugo</button>
-            <button class="payer-btn" id="btn-michelle" onclick="setPayer('Michelle')">Michelle</button>
+            <button class="payer-btn active-m" id="btn-michelle" onclick="setPayer('Michelle')">Michelle</button>
+            <button class="payer-btn" id="btn-hugo" onclick="setPayer('Hugo')">Hugo</button>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Split</label>
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:11px;color:var(--accent-h);width:56px;text-align:right" id="split-hugo-label">Hugo 50%</span>
+            <span style="font-size:11px;color:var(--accent-m);width:72px;text-align:right" id="split-michelle-label">Michelle 50%</span>
             <input type="range" id="inp-split" min="0" max="100" value="50" oninput="updateSplit(this.value)"
               style="flex:1;accent-color:var(--accent-h);cursor:pointer">
-            <span style="font-size:11px;color:var(--accent-m);width:72px" id="split-michelle-label">Michelle 50%</span>
+            <span style="font-size:11px;color:var(--accent-h);width:56px" id="split-hugo-label">Hugo 50%</span>
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:4px">
-            <span style="font-size:10px;color:var(--muted)">Hugo pays more</span>
             <span style="font-size:10px;color:var(--muted)">Michelle pays more</span>
+            <span style="font-size:10px;color:var(--muted)">Hugo pays more</span>
           </div>
         </div>
         <div class="form-group">
@@ -255,8 +255,8 @@
         <div class="form-group">
           <label class="form-label">Paid by</label>
           <div class="payer-toggle">
-            <button class="payer-btn active-h" id="pbtn-hugo" onclick="setPaymentPayer('Hugo')">Hugo</button>
-            <button class="payer-btn" id="pbtn-michelle" onclick="setPaymentPayer('Michelle')">Michelle</button>
+            <button class="payer-btn active-m" id="pbtn-michelle" onclick="setPaymentPayer('Michelle')">Michelle</button>
+            <button class="payer-btn" id="pbtn-hugo" onclick="setPaymentPayer('Hugo')">Hugo</button>
           </div>
         </div>
         <div class="form-group">
@@ -296,8 +296,8 @@ const CATS = {
 
 let expenses = [];
 let payments = [];
-let selectedPayer = 'Hugo';
-let selectedPaymentPayer = 'Hugo';
+let selectedPayer = 'Michelle';
+let selectedPaymentPayer = 'Michelle';
 
 document.getElementById('inp-date').value = today();
 document.getElementById('pay-date').value = today();
@@ -376,10 +376,11 @@ function setPaymentPayer(p) {
 }
 
 function updateSplit(val) {
+  // val = Hugo's percentage (0-100), Michelle is on left so Michelle = 100 - val
   val = parseInt(val);
   const michelle = 100 - val;
-  document.getElementById('split-hugo-label').textContent = 'Hugo ' + val + '%';
   document.getElementById('split-michelle-label').textContent = 'Michelle ' + michelle + '%';
+  document.getElementById('split-hugo-label').textContent = 'Hugo ' + val + '%';
 }
 
 // ── ADD EXPENSE ──
