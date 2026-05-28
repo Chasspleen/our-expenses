@@ -532,7 +532,7 @@ function renderList() {
           <div class="expense-meta"><span>${cat.label}</span><span>${fmtDate(e.date)}</span></div>
         </div>
         <span class="payer-tag ${payerClass}">${e.payer}</span>
-        ${(parseInt(e.hugoSplit)||50) !== 50 ? `<span style="font-size:10px;color:var(--muted);align-self:center">${parseInt(e.hugoSplit)||50}/${100-(parseInt(e.hugoSplit)||50)}</span>` : ''}
+        ${(e.hugoSplit !== undefined && e.hugoSplit !== '' && parseInt(e.hugoSplit) !== 50) ? `<span style="font-size:10px;color:var(--muted);align-self:center">${100-parseInt(e.hugoSplit)}/${parseInt(e.hugoSplit)}</span>` : ''}
         <div style="display:flex;align-items:center;gap:10px">
           <span class="expense-amount">${fmt(e.amount)}</span>
           <span onclick="deleteExpense('${e.id}')" style="color:var(--muted);cursor:pointer;font-size:16px;line-height:1" title="Remove">×</span>
@@ -572,11 +572,11 @@ function renderBalance() {
 
   // What Hugo should have paid across all expenses (based on per-expense splits)
   const hugoOwes = expenses.reduce((s, e) => {
-    const hugoShare = (parseInt(e.hugoSplit) || 50) / 100;
+    const hugoShare = (e.hugoSplit !== undefined && e.hugoSplit !== '' ? parseInt(e.hugoSplit) : 50) / 100;
     return s + e.amount * hugoShare;
   }, 0);
   const michelleOwes = expenses.reduce((s, e) => {
-    const michelleShare = 1 - (parseInt(e.hugoSplit) || 50) / 100;
+    const michelleShare = 1 - (e.hugoSplit !== undefined && e.hugoSplit !== '' ? parseInt(e.hugoSplit) : 50) / 100;
     return s + e.amount * michelleShare;
   }, 0);
 
@@ -602,7 +602,7 @@ function renderBalance() {
     pill.innerHTML = `<strong>Michelle</strong> owes Hugo<br>${fmtFull(netOwed)}`;
     htEl.classList.add('positive'); mtEl.classList.add('negative');
   } else {
-    pill.innerHTML = `<strong>Hugo</strong> owes Michelle<br>${fmtFull(netOwed)}`;
+    pill.innerHTML = `<strong>Hugo</strong> owes Michelle<br>${fmtFull(Math.abs(netOwed))}`;
     htEl.classList.add('negative'); mtEl.classList.add('positive');
   }
 }
