@@ -13,9 +13,9 @@
     --border: #142b17;
     --text: #d4e8d8;
     --muted: #3a5e42;
-    --accent-h: #22863a;
-    --accent-m: #2ea04f;
-    --green: #2ea04f;
+    --accent-h: #1a7a34;
+    --accent-m: #22a845;
+    --green: #22a845;
     --red: #c0392b;
     --radius: 10px;
   }
@@ -147,20 +147,20 @@
 
 <header>
   <div class="header-title"><em>Our</em> Expenses</div>
-  <div class="header-sub">Michelle &amp; Hugo</div>
+  <div class="header-sub">Hugo &amp; Michelle</div>
 </header>
 
 <div class="balance-bar">
   <div class="balance-person">
-    <div class="balance-label">Michelle paid</div>
-    <div class="balance-amount neutral" id="michelle-total">IDR 0</div>
+    <div class="balance-label">Hugo paid</div>
+    <div class="balance-amount neutral" id="hugo-total">IDR 0</div>
   </div>
   <div class="balance-center">
     <div class="settlement-pill" id="settlement-text">Loading...</div>
   </div>
   <div class="balance-person right">
-    <div class="balance-label">Hugo paid</div>
-    <div class="balance-amount neutral" id="hugo-total">IDR 0</div>
+    <div class="balance-label">Michelle paid</div>
+    <div class="balance-amount neutral" id="michelle-total">IDR 0</div>
   </div>
 </div>
 
@@ -225,6 +225,19 @@
           <div class="payer-toggle">
             <button class="payer-btn active-h" id="btn-hugo" onclick="setPayer('Hugo')">Hugo</button>
             <button class="payer-btn" id="btn-michelle" onclick="setPayer('Michelle')">Michelle</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Split</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--accent-h);width:56px;text-align:right" id="split-hugo-label">Hugo 50%</span>
+            <input type="range" id="inp-split" min="0" max="100" value="50" oninput="updateSplit(this.value)"
+              style="flex:1;accent-color:var(--accent-h);cursor:pointer">
+            <span style="font-size:11px;color:var(--accent-m);width:72px" id="split-michelle-label">Michelle 50%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span style="font-size:10px;color:var(--muted)">Hugo pays more</span>
+            <span style="font-size:10px;color:var(--muted)">Michelle pays more</span>
           </div>
         </div>
         <div class="form-group">
@@ -362,6 +375,13 @@ function setPaymentPayer(p) {
   document.getElementById('pbtn-michelle').className = 'payer-btn' + (p === 'Michelle' ? ' active-m' : '');
 }
 
+function updateSplit(val) {
+  val = parseInt(val);
+  const michelle = 100 - val;
+  document.getElementById('split-hugo-label').textContent = 'Hugo ' + val + '%';
+  document.getElementById('split-michelle-label').textContent = 'Michelle ' + michelle + '%';
+}
+
 // ── ADD EXPENSE ──
 
 async function addExpense() {
@@ -369,12 +389,13 @@ async function addExpense() {
   const amount = parseFloat(document.getElementById('inp-amount').value);
   const cat    = document.getElementById('inp-cat').value;
   const date   = document.getElementById('inp-date').value;
+  const hugoSplit = parseInt(document.getElementById('inp-split').value);
 
   if (!desc)              { showToast('Enter a description', true); return; }
   if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
   if (!date)              { showToast('Select a date', true); return; }
 
-  const entry = { id: String(Date.now()), desc, amount, cat, payer: selectedPayer, date };
+  const entry = { id: String(Date.now()), desc, amount, cat, payer: selectedPayer, date, hugoSplit };
 
   setBusy('btn-add-expense', true);
   try {
@@ -384,6 +405,8 @@ async function addExpense() {
     document.getElementById('inp-desc').value = '';
     document.getElementById('inp-amount').value = '';
     document.getElementById('inp-date').value = today();
+    document.getElementById('inp-split').value = 50;
+    updateSplit(50);
     showToast('Expense added');
   } catch (err) {
     showToast('Error: ' + err.message, true);
@@ -495,6 +518,7 @@ function renderList() {
           <div class="expense-meta"><span>${cat.label}</span><span>${fmtDate(e.date)}</span></div>
         </div>
         <span class="payer-tag ${payerClass}">${e.payer}</span>
+        ${(parseInt(e.hugoSplit)||50) !== 50 ? `<span style="font-size:10px;color:var(--muted);align-self:center">${parseInt(e.hugoSplit)||50}/${100-(parseInt(e.hugoSplit)||50)}</span>` : ''}
         <div style="display:flex;align-items:center;gap:10px">
           <span class="expense-amount">${fmt(e.amount)}</span>
           <span onclick="deleteExpense('${e.id}')" style="color:var(--muted);cursor:pointer;font-size:16px;line-height:1" title="Remove">×</span>
@@ -531,8 +555,19 @@ function renderPaymentList() {
 function renderBalance() {
   const hugoExp      = expenses.filter(e => e.payer === 'Hugo').reduce((s, e) => s + e.amount, 0);
   const michelleExp  = expenses.filter(e => e.payer === 'Michelle').reduce((s, e) => s + e.amount, 0);
-  const total        = hugoExp + michelleExp;
-  const rawOwed      = hugoExp - total / 2; // positive = michelle owes hugo
+
+  // What Hugo should have paid across all expenses (based on per-expense splits)
+  const hugoOwes = expenses.reduce((s, e) => {
+    const hugoShare = (parseInt(e.hugoSplit) || 50) / 100;
+    return s + e.amount * hugoShare;
+  }, 0);
+  const michelleOwes = expenses.reduce((s, e) => {
+    const michelleShare = 1 - (parseInt(e.hugoSplit) || 50) / 100;
+    return s + e.amount * michelleShare;
+  }, 0);
+
+  // rawOwed: positive = michelle owes hugo (hugo paid more than his share)
+  const rawOwed      = hugoExp - hugoOwes;
   const hugoPaid     = payments.filter(p => p.payer === 'Hugo').reduce((s, p) => s + p.amount, 0);
   const michellePaid = payments.filter(p => p.payer === 'Michelle').reduce((s, p) => s + p.amount, 0);
   const netOwed      = rawOwed - michellePaid + hugoPaid;
