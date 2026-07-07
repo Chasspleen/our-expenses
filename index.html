@@ -358,12 +358,12 @@ async function loadAll() {
       ...e,
       amount: Number(e.amount),
       id: String(e.id),
-    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+    })).sort((a, b) => parseDate(b.date) - parseDate(a.date));
     payments = (data.payments || []).map(p => ({
       ...p,
       amount: Number(p.amount),
       id: String(p.id),
-    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+    })).sort((a, b) => parseDate(b.date) - parseDate(a.date));
     render();
   } catch (err) {
     showToast('Could not load data: ' + err.message, true);
@@ -429,7 +429,7 @@ async function addExpense() {
   try {
     await api('addExpense', { data: entry });
     expenses.unshift(entry);
-    expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+    expenses.sort((a, b) => parseDate(b.date) - parseDate(a.date));
     render();
     document.getElementById('inp-desc').value = '';
     document.getElementById('inp-amount').value = '';
@@ -460,7 +460,7 @@ async function addPayment() {
   try {
     await api('addPayment', { data: entry });
     payments.unshift(entry);
-    payments.sort((a, b) => new Date(b.date) - new Date(a.date));
+    payments.sort((a, b) => parseDate(b.date) - parseDate(a.date));
     render();
     document.getElementById('pay-amount').value = '';
     document.getElementById('pay-note').value = '';
@@ -526,20 +526,22 @@ function fmtFull(n) {
   return 'IDR ' + Math.round(Math.abs(n)).toLocaleString('en-US');
 }
 
+function parseDate(dateStr) {
+  if (!dateStr) return new Date(0);
+  if (typeof dateStr === 'number') {
+    return new Date((dateStr - 25569) * 86400 * 1000);
+  }
+  const s = String(dateStr).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return new Date(s + 'T00:00:00');
+  }
+  const d = new Date(s);
+  return isNaN(d) ? new Date(0) : d;
+}
+
 function fmtDate(dateStr) {
   if (!dateStr) return '';
-  let d;
-  if (typeof dateStr === 'number') {
-    // Google Sheets serial date (days since Dec 30 1899)
-    d = new Date((dateStr - 25569) * 86400 * 1000);
-  } else {
-    const s = String(dateStr).trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-      d = new Date(s + 'T00:00:00');
-    } else {
-      d = new Date(s);
-    }
-  }
+  const d = parseDate(dateStr);
   if (!d || isNaN(d)) return String(dateStr);
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
@@ -554,9 +556,7 @@ function renderList() {
     const cat = CATS[e.cat] || CATS.other;
     const payerClass = e.payer === 'Hugo' ? 'payer-h' : 'payer-m';
     const splitVal = (e.hugoSplit !== undefined && e.hugoSplit !== '') ? parseInt(e.hugoSplit) : 50;
-    const splitBadge = splitVal !== 50
-      ? `<span style="font-size:10px;color:var(--muted)">${100-splitVal}/${splitVal}</span>`
-      : '';
+    const splitBadge = `<span style="font-size:10px;color:var(--muted)">${100-splitVal}/${splitVal}</span>`;
     return `
       <div class="expense-item">
         <span class="cat-dot" style="background:${cat.color}"></span>
