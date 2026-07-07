@@ -148,6 +148,7 @@
 <header>
   <div class="header-title"><em>Our</em> Expenses</div>
   <div class="header-sub">Michelle &amp; Hugo</div>
+  <button onclick="resetAll()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:6px;cursor:pointer;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Reset</button>
 </header>
 
 <div class="balance-bar">
@@ -323,6 +324,32 @@ async function api(action, extra = {}) {
   return data;
 }
 
+async function resetAll() {
+  if (!confirm('Reset everything? This will permanently delete all expenses and payments from the sheet.')) return;
+  if (!confirm('Are you sure? This cannot be undone.')) return;
+  setLoader(true, 'Resetting...');
+  try {
+    // Delete all expenses
+    const toDeleteExp = [...expenses];
+    for (const e of toDeleteExp) {
+      await api('deleteExpense', { id: e.id });
+    }
+    // Delete all payments
+    const toDeletePay = [...payments];
+    for (const p of toDeletePay) {
+      await api('deletePayment', { id: p.id });
+    }
+    expenses = [];
+    payments = [];
+    render();
+    showToast('All data reset');
+  } catch (err) {
+    showToast('Error: ' + err.message, true);
+  } finally {
+    setLoader(false);
+  }
+}
+
 async function loadAll() {
   setLoader(true, 'Loading...');
   try {
@@ -331,12 +358,12 @@ async function loadAll() {
       ...e,
       amount: Number(e.amount),
       id: String(e.id),
-    }));
+    })).sort((a, b) => new Date(b.date) - new Date(a.date));
     payments = (data.payments || []).map(p => ({
       ...p,
       amount: Number(p.amount),
       id: String(p.id),
-    }));
+    })).sort((a, b) => new Date(b.date) - new Date(a.date));
     render();
   } catch (err) {
     showToast('Could not load data: ' + err.message, true);
@@ -402,6 +429,7 @@ async function addExpense() {
   try {
     await api('addExpense', { data: entry });
     expenses.unshift(entry);
+    expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
     render();
     document.getElementById('inp-desc').value = '';
     document.getElementById('inp-amount').value = '';
@@ -432,6 +460,7 @@ async function addPayment() {
   try {
     await api('addPayment', { data: entry });
     payments.unshift(entry);
+    payments.sort((a, b) => new Date(b.date) - new Date(a.date));
     render();
     document.getElementById('pay-amount').value = '';
     document.getElementById('pay-note').value = '';
