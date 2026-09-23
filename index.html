@@ -310,19 +310,24 @@ function today() {
 
 // ── API ──
 
-async function api(action, extra = {}) {
-  // Apps Script CORS only works reliably with GET + URL params
+async function api(action, extra = {}, retries = 2) {
   const url = new URL(API_URL);
   url.searchParams.set('secret', SECRET);
   url.searchParams.set('action', action);
-  // Encode any extra payload as a single 'payload' param
   if (Object.keys(extra).length) {
     url.searchParams.set('payload', JSON.stringify(extra));
   }
-  const res = await fetch(url.toString(), { redirect: 'follow' });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error || 'Unknown error');
-  return data;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url.toString(), { redirect: 'follow' });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+      return data;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
 }
 
 async function resetAll() {
@@ -434,29 +439,34 @@ async function addExpense() {
   const date   = document.getElementById('inp-date').value;
   const hugoSplit = parseInt(document.getElementById('inp-split').value);
 
-  if (!desc)              { showToast('Enter a description', true); return; }
+  if (!desc)                  { showToast('Enter a description', true); return; }
   if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
-  if (!date)              { showToast('Select a date', true); return; }
+  if (!date)                  { showToast('Select a date', true); return; }
   submitting = true;
 
   const entry = { id: String(Date.now()), desc, amount, cat, payer: selectedPayer, date, hugoSplit };
 
-  setBusy('btn-add-expense', true);
+  // Optimistic: update UI immediately
+  expenses.unshift(entry);
+  expenses.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  render();
+  document.getElementById('inp-desc').value = '';
+  document.getElementById('inp-amount').value = '';
+  document.getElementById('inp-date').value = today();
+  document.getElementById('inp-split').value = 50;
+  updateSplit(50);
+  showToast('Saving...');
+
+  // Write to sheet in background
   try {
     await api('addExpense', { data: entry });
-    expenses.unshift(entry);
-    expenses.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-    render();
-    document.getElementById('inp-desc').value = '';
-    document.getElementById('inp-amount').value = '';
-    document.getElementById('inp-date').value = today();
-    document.getElementById('inp-split').value = 50;
-    updateSplit(50);
     showToast('Expense added');
   } catch (err) {
-    showToast('Error: ' + err.message, true);
+    // Revert on failure
+    expenses = expenses.filter(e => e.id !== entry.id);
+    render();
+    showToast('Failed to save — try again', true);
   } finally {
-    setBusy('btn-add-expense', false);
     submitting = false;
   }
 }
@@ -475,20 +485,25 @@ async function addPayment() {
 
   const entry = { id: String(Date.now()), amount, note, payer: selectedPaymentPayer, date };
 
-  setBusy('btn-add-payment', true);
+  // Optimistic: update UI immediately
+  payments.unshift(entry);
+  payments.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  render();
+  document.getElementById('pay-amount').value = '';
+  document.getElementById('pay-note').value = '';
+  document.getElementById('pay-date').value = today();
+  showToast('Saving...');
+
+  // Write to sheet in background
   try {
     await api('addPayment', { data: entry });
-    payments.unshift(entry);
-    payments.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-    render();
-    document.getElementById('pay-amount').value = '';
-    document.getElementById('pay-note').value = '';
-    document.getElementById('pay-date').value = today();
     showToast('Payment logged');
   } catch (err) {
-    showToast('Error: ' + err.message, true);
+    // Revert on failure
+    payments = payments.filter(p => p.id !== entry.id);
+    render();
+    showToast('Failed to save — try again', true);
   } finally {
-    setBusy('btn-add-payment', false);
     submitting = false;
   }
 }
