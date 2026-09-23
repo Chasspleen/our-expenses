@@ -428,7 +428,6 @@ function updateSplit(val) {
 
 async function addExpense() {
   if (submitting) return;
-  submitting = true;
   const desc   = document.getElementById('inp-desc').value.trim();
   const amount = parseFloat(document.getElementById('inp-amount').value);
   const cat    = document.getElementById('inp-cat').value;
@@ -438,6 +437,7 @@ async function addExpense() {
   if (!desc)              { showToast('Enter a description', true); return; }
   if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
   if (!date)              { showToast('Select a date', true); return; }
+  submitting = true;
 
   const entry = { id: String(Date.now()), desc, amount, cat, payer: selectedPayer, date, hugoSplit };
 
@@ -465,13 +465,13 @@ async function addExpense() {
 
 async function addPayment() {
   if (submitting) return;
-  submitting = true;
   const amount = parseFloat(document.getElementById('pay-amount').value);
   const note   = document.getElementById('pay-note').value.trim() || 'Settlement payment';
   const date   = document.getElementById('pay-date').value;
 
   if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
   if (!date)                  { showToast('Select a date', true); return; }
+  submitting = true;
 
   const entry = { id: String(Date.now()), amount, note, payer: selectedPaymentPayer, date };
 
