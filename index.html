@@ -299,6 +299,7 @@ let expenses = [];
 let payments = [];
 let selectedPayer = 'Michelle';
 let selectedPaymentPayer = 'Michelle';
+let submitting = false;
 
 document.getElementById('inp-date').value = today();
 document.getElementById('pay-date').value = today();
@@ -354,16 +355,29 @@ async function loadAll() {
   setLoader(true, 'Loading...');
   try {
     const data = await api('getAll');
-    expenses = (data.expenses || []).map(e => ({
+    const allExpenses = (data.expenses || []).map(e => ({
       ...e,
       amount: Number(e.amount),
       id: String(e.id),
-    })).sort((a, b) => parseDate(b.date) - parseDate(a.date));
-    payments = (data.payments || []).map(p => ({
+    }));
+    const seenExp = new Set();
+    expenses = allExpenses.filter(e => {
+      if (seenExp.has(e.id)) return false;
+      seenExp.add(e.id);
+      return true;
+    }).sort((a, b) => parseDate(b.date) - parseDate(a.date));
+
+    const allPayments = (data.payments || []).map(p => ({
       ...p,
       amount: Number(p.amount),
       id: String(p.id),
-    })).sort((a, b) => parseDate(b.date) - parseDate(a.date));
+    }));
+    const seenPay = new Set();
+    payments = allPayments.filter(p => {
+      if (seenPay.has(p.id)) return false;
+      seenPay.add(p.id);
+      return true;
+    }).sort((a, b) => parseDate(b.date) - parseDate(a.date));
     render();
   } catch (err) {
     showToast('Could not load data: ' + err.message, true);
@@ -413,6 +427,8 @@ function updateSplit(val) {
 // ── ADD EXPENSE ──
 
 async function addExpense() {
+  if (submitting) return;
+  submitting = true;
   const desc   = document.getElementById('inp-desc').value.trim();
   const amount = parseFloat(document.getElementById('inp-amount').value);
   const cat    = document.getElementById('inp-cat').value;
@@ -441,12 +457,15 @@ async function addExpense() {
     showToast('Error: ' + err.message, true);
   } finally {
     setBusy('btn-add-expense', false);
+    submitting = false;
   }
 }
 
 // ── ADD PAYMENT ──
 
 async function addPayment() {
+  if (submitting) return;
+  submitting = true;
   const amount = parseFloat(document.getElementById('pay-amount').value);
   const note   = document.getElementById('pay-note').value.trim() || 'Settlement payment';
   const date   = document.getElementById('pay-date').value;
@@ -470,6 +489,7 @@ async function addPayment() {
     showToast('Error: ' + err.message, true);
   } finally {
     setBusy('btn-add-payment', false);
+    submitting = false;
   }
 }
 
